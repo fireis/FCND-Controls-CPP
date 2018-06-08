@@ -18,21 +18,23 @@ kappa = 0.016
 minMotorThrust = .1
 maxMotorThrust = 4.5
 
+
 # Position control gains
-kpPosXY = 12
+kpPosXY = 28
 kpPosZ = 20
-KiPosZ = 80
+KiPosZ = 40
 
 # Velocity control gains
-kpVelXY = 6
-kpVelZ = 50
+kpVelXY = 12
+kpVelZ = 10
 
 # Angle control gains
-kpBank = 7
+kpBank = 8
 kpYaw = 2
 
 # Angle rate gains
-kpPQR = 45, 45, 15
+kpPQR = 92, 92, 5
+
 
 # limits
 maxAscentRate = 5

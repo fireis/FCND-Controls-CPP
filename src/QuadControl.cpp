@@ -70,7 +70,7 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 //https://classroom.udacity.com/nanodegrees/nd787/parts/5aa0a956-4418-4a41-846f-cb7ea63349b3/modules/b78ec22c-5afe-444b-8719-b390bd2b2988/lessons/2263120a-a3c4-4b5a-9a96-ac3e1dbae179/concepts/18bb7626-f531-496f-8c60-9ecf01f0e583
-    float l_perp = L / (2*sqrt(2));
+    float l_perp = L / (sqrt(2));
 
     float rm_x = momentCmd.x / l_perp;
     float rm_y = momentCmd.y / l_perp;
