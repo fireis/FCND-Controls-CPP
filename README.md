@@ -8,7 +8,7 @@ For easy navigation throughout this document, here is an outline:
  - [Simulator walkthrough](#simulator-walkthrough)
  - [The tasks](#the-tasks)
  - [Evaluation](#evaluation)
-
+ - [Writeup](#writeup)
 
 ## Development Environment Setup ##
 
@@ -297,3 +297,83 @@ The specific performance metrics are as follows:
 ## Authors ##
 
 Thanks to Fotokite for the initial development of the project code and simulator.
+
+
+## Writeup ##
+
+    - Implemented body rate control in C++: I've implemented body rate control accounting for the moments of inertia by following the appropriate equation as follows:
+
+        ```
+            momentCmd = (pqrCmd - pqr) * kpPQR * V3F(Ixx, Iyy, Izz);
+        ```
+    - Implemented roll pitch control in C++: I implemented the roll pitch control taking into consideration the mass of the vehicle as follows:
+
+    ```
+        float c = collThrustCmd / mass;
+
+        float r13_cmd = - CONSTRAIN(accelCmd.x / c, -maxTiltAngle, maxTiltAngle);
+        float r23_cmd = - CONSTRAIN(accelCmd.y / c, -maxTiltAngle, maxTiltAngle);
+
+        float b_x_cmd_dot = kpBank * (r13_cmd - R(0, 2));
+        float b_y_cmd_dot = kpBank * (r23_cmd - R(1, 2));
+
+        pqrCmd.x = (R(1, 0) * b_x_cmd_dot - R(0,0)*b_y_cmd_dot)/R(2, 2);
+        pqrCmd.y = (R(1, 1) * b_x_cmd_dot - R(0,1)*b_y_cmd_dot)/R(2, 2);
+
+    ```
+    - Implement altitude controller in C++: to implement the altitude controller, I've calculated the errors and considered each of the p, i and d terms, using all of them in addition to the mass to calculate the total thrust.
+
+    ```
+       // Based on equations and solution code for Lesson 4
+        float z_err = posZCmd - posZ;
+        float p_term = kpPosZ * z_err;
+
+        integratedAltitudeError += z_err * dt;
+        float i_term = KiPosZ * integratedAltitudeError;
+
+        float z_dot_err = velZCmd - velZ;
+        float d_term = kpVelZ * z_dot_err + velZ;
+
+        float u1_bar = p_term + i_term + d_term + accelZCmd;
+
+        thrust = mass * ( CONST_GRAVITY - u1_bar)/R(2,2);
+    ```
+
+    - Implement lateral position control in C++: the lateral position control was implemented by considering the position error, velocity error and accelerations.
+
+    ```
+    velCmd.x = CONSTRAIN(velCmd.x, -maxSpeedXY, maxSpeedXY);
+    velCmd.y = CONSTRAIN(velCmd.y, -maxSpeedXY, maxSpeedXY);
+
+    accelCmd.x = kpPosXY * (posCmd.x - pos.x) + kpVelXY * (velCmd.x - vel.x) + accelCmdFF.x;
+    accelCmd.y = kpPosXY * (posCmd.y - pos.y) + kpVelXY * (velCmd.y - vel.y) + accelCmdFF.y;
+
+    accelCmd.x = CONSTRAIN(accelCmd.x, -maxAccelXY, maxAccelXY);
+    accelCmd.y = CONSTRAIN(accelCmd.y, -maxAccelXY, maxAccelXY);
+    accelCmd.z = accelCmdFF.z;
+    ```
+    - Implement yaw control in C++: yaw control had a simple implementation as I only multiply the yaw error by kpYaw
+
+    ```
+    yawRateCmd = kpYaw * (yawCmd - yaw);
+    ```
+
+    - Implement calculating the motor commands given commanded thrust and moments in C++: Calculating the motor commands given commanded thrust was quite challenging as a fair amount of math manipulation was needed to adapt the force equations. The implementation is derived from the equations:
+    ```
+    float l_perp = L / (2*sqrt(2));
+
+    float rm_x = momentCmd.x / l_perp;
+    float rm_y = momentCmd.y / l_perp;
+    float rm_z = - momentCmd.z / kappa;
+    float rm_c = collThrustCmd;
+
+    cmd.desiredThrustsN[0] = (rm_c + rm_x + rm_z +rm_y) / 4.0;
+    cmd.desiredThrustsN[1] = (rm_c - rm_x + rm_y - rm_z) / 4.0;
+    cmd.desiredThrustsN[2] = (rm_c + rm_x - rm_y - rm_z) / 4.0;
+    cmd.desiredThrustsN[3] = (rm_c - rm_x - rm_y + rm_z) / 4.0;
+    ```
+
+    - Your C++ controller is successfully able to fly the provided test trajectory and visually passes inspection of the scenarios leading up to the test trajectory: tuning the parameters was a tough task that required lots of adjustment.
+
+
+
